@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --hud-blue: #00d4ff;
+            --hud-blue-dim: rgba(0, 212, 255, 0.15);
+            --hud-blue-glow: rgba(0, 212, 255, 0.5);
+            --hud-orange: #ff6a00;
+            --hud-orange-dim: rgba(255, 106, 0, 0.2);
+            --bg-dark: #010a0f;
+            --bg-panel: rgba(0, 20, 35, 0.85);
+            --text-main: #00d4ff;
+            --text-dim: rgba(0, 212, 255, 0.5);
+            --grid-line: rgba(0, 212, 255, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Share Tech Mono', monospace;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Grid background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Radial glow center ── */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px; height: 800px;
+            background: radial-gradient(ellipse, rgba(0,100,180,0.12) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hud-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            grid-template-columns: 200px 1fr 200px;
+            gap: 0;
+            padding: 16px;
+        }
+
+        /* ── TOP HEADER ── */
+        .hud-header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px 12px;
+            border-bottom: 1px solid var(--hud-blue-dim);
+            margin-bottom: 12px;
+        }
+
+        .header-left, .header-right {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+        }
+        .header-right { text-align: right; }
+
+        .header-center h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            font-weight: 900;
+            letter-spacing: 12px;
+            text-align: center;
+            color: var(--hud-blue);
+            text-shadow: 0 0 30px var(--hud-blue-glow), 0 0 60px rgba(0,212,255,0.2);
+        }
+
+        .header-center .subtitle {
+            text-align: center;
+            font-size: 8px;
+            letter-spacing: 4px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* ── LEFT PANEL ── */
+        .left-panel {
+            grid-column: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 12px;
+        }
+
+        /* ── CENTER PANEL ── */
+        .center-panel {
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 8px;
+        }
+
+        /* ── RIGHT PANEL ── */
+        .right-panel {
+            grid-column: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-left: 12px;
+        }
+
+        /* ── HUD Box ── */
+        .hud-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--hud-blue-dim);
+            border-radius: 4px;
+            padding: 10px;
+            position: relative;
+            backdrop-filter: blur(4px);
+        }
+
+        .hud-box::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: 10px;
+            width: 40px; height: 1px;
+            background: var(--hud-blue);
+            box-shadow: 0 0 8px var(--hud-blue);
+        }
+
+        .hud-box-label {
+            font-size: 7px;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        /* ── Arc Reactor ── */
+        .arc-reactor {
+            width: 80px; height: 80px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arc-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid var(--hud-blue);
+        }
+        .arc-ring-1 {
+            width: 80px; height: 80px;
+            border-color: rgba(0,212,255,0.3);
+            animation: spin 8s linear infinite;
+        }
+        .arc-ring-2 {
+            width: 60px; height: 60px;
+            border-color: rgba(0,212,255,0.5);
+            border-top-color: var(--hud-blue);
+            animation: spin 4s linear infinite reverse;
+        }
+        .arc-ring-3 {
+            width: 40px; height: 40px;
+            border-color: rgba(0,212,255,0.4);
+            border-right-color: var(--hud-blue);
+            animation: spin 2s linear infinite;
+        }
+        .arc-core {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: var(--hud-blue);
+            box-shadow: 0 0 10px var(--hud-blue), 0 0 20px var(--hud-blue-glow), 0 0 40px rgba(0,212,255,0.3);
+            z-index: 1;
+            transition: all 0.3s;
+        }
+        .arc-core.active {
+            background: #fff;
+            box-shadow: 0 0 15px #fff, 0 0 30px var(--hud-blue), 0 0 60px var(--hud-blue-glow);
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* ── Status bar ── */
+        #status-text {
+            font-size: 8px;
+            letter-spacing: 2px;
+            text-align: center;
+            color: var(--text-dim);
+            margin-top: 6px;
+            min-height: 14px;
+            transition: color 0.3s;
+        }
+        #status-text.listening { color: #00ff88; }
+        #status-text.speaking { color: var(--hud-orange); }
+        #status-text.processing { color: #ffee00; }
+
+        /* ── Waveform ── */
+        .waveform {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            height: 30px;
+        }
+        .wave-bar {
+            width: 3px;
+            background: var(--hud-blue);
+            border-radius: 2px;
+            height: 4px;
+            transition: height 0.1s;
+        }
+        .waveform.active .wave-bar {
+            animation: wave 0.8s ease-in-out infinite;
+        }
+        .waveform.active .wave-bar:nth-child(1) { animation-delay: 0s; }
+        .waveform.active .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .waveform.active .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .waveform.active .wave-bar:nth-child(4) { animation-delay: 0.1s; }
+        .waveform.active .wave-bar:nth-child(5) { animation-delay: 0s; }
+        .waveform.active .wave-bar:nth-child(6) { animation-delay: 0.15s; }
+        .waveform.active .wave-bar:nth-child(7) { animation-delay: 0.05s; }
+
+        @keyframes wave {
+            0%, 100% { height: 4px; }
+            50% { height: 22px; }
+        }
+
+        /* ── System stats ── */
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .stat-label { font-size: 7px; letter-spacing: 2px; color: var(--text-dim); }
+        .stat-bar-wrap { width: 70px; height: 3px; background: rgba(0,212,255,0.1); border-radius: 2px; }
+        .stat-bar { height: 100%; background: var(--hud-blue); border-radius: 2px; box-shadow: 0 0 4px var(--hud-blue); }
+
+        /* ── Chat box ── */
+        #chat-box {
+            flex: 1;
+            background: var(--bg-panel);
+            border: 1px solid var(--hud-blue-dim);
+            border-radius: 4px;
+            padding: 14px;
+            overflow-y: auto;
+            position: relative;
+            backdrop-filter: blur(4px);
+        }
+
+        #chat-box::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: 10px;
+            width: 60px; height: 1px;
+            background: var(--hud-blue);
+            box-shadow: 0 0 8px var(--hud-blue);
+        }
+
+        #chat-box::-webkit-scrollbar { width: 3px; }
+        #chat-box::-webkit-scrollbar-track { background: transparent; }
+        #chat-box::-webkit-scrollbar-thumb { background: var(--hud-blue-dim); border-radius: 2px; }
+
+        .msg { margin: 8px 0; font-size: 11px; line-height: 1.6; }
+
+        .user-msg::before {
+            content: '▶ YOU // ';
+            color: rgba(255,255,255,0.4);
+            font-size: 9px;
+            letter-spacing: 2px;
+        }
+        .user-msg { color: rgba(255,255,255,0.8); }
+
+        .jarvis-msg::before {
+            content: '◆ JARVIS // ';
+            color: var(--hud-blue);
+            font-size: 9px;
+            letter-spacing: 2px;
+        }
+        .jarvis-msg { color: var(--text-main); }
+
+        /* ── Input area ── */
+        .input-area {
+            background: var(--bg-panel);
+            border: 1px solid var(--hud-blue-dim);
+            border-radius: 4px;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            position: relative;
+        }
+        .input-area::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: 10px;
+            width: 40px; height: 1px;
+            background: var(--hud-blue);
+            box-shadow: 0 0 8px var(--hud-blue);
+        }
+
+        .input-prefix {
+            font-size: 10px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        #user-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            outline: none;
+            caret-color: var(--hud-blue);
+        }
+        #user-input::placeholder { color: var(--text-dim); font-size: 10px; }
+
+        .hud-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid var(--hud-blue-dim);
+            color: var(--hud-blue);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .hud-btn:hover {
+            background: var(--hud-blue-dim);
+            box-shadow: 0 0 10px var(--hud-blue-glow);
+        }
+        .hud-btn.mic-active {
+            border-color: #00ff88;
+            color: #00ff88;
+            box-shadow: 0 0 10px rgba(0,255,136,0.4);
+        }
+        .hud-btn.orange {
+            border-color: var(--hud-orange);
+            color: var(--hud-orange);
+        }
+        .hud-btn.orange:hover {
+            background: var(--hud-orange-dim);
+            box-shadow: 0 0 10px rgba(255,106,0,0.4);
+        }
+
+        /* ── Corner decorations ── */
+        .corner { position: fixed; width: 40px; height: 40px; }
+        .corner-tl { top: 8px; left: 8px; border-top: 1px solid var(--hud-blue); border-left: 1px solid var(--hud-blue); }
+        .corner-tr { top: 8px; right: 8px; border-top: 1px solid var(--hud-blue); border-right: 1px solid var(--hud-blue); }
+        .corner-bl { bottom: 8px; left: 8px; border-bottom: 1px solid var(--hud-blue); border-left: 1px solid var(--hud-blue); }
+        .corner-br { bottom: 8px; right: 8px; border-bottom: 1px solid var(--hud-blue); border-right: 1px solid var(--hud-blue); }
+
+        /* ── Scanning line ── */
+        .scan-line {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--hud-blue), transparent);
+            opacity: 0.3;
+            animation: scan 6s linear infinite;
+            pointer-events: none;
+            z-index: 999;
+        }
+        @keyframes scan { from { top: 0; } to { top: 100vh; } }
+
+        /* ── Clock ── */
+        #clock {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--hud-blue);
+            text-align: center;
+        }
+
+        /* ── Mini radar ── */
+        .radar-wrap {
+            width: 80px; height: 80px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .radar-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(0,212,255,0.2);
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+        }
+        .radar-sweep {
+            position: absolute;
+            width: 50%; height: 50%;
+            top: 50%; left: 50%;
+            transform-origin: 0% 100%;
+            background: linear-gradient(135deg, transparent 50%, rgba(0,212,255,0.15));
+            animation: radar-spin 3s linear infinite;
+        }
+        @keyframes radar-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- Corners -->
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+<div class="scan-line"></div>
+
+<div class="hud-wrapper">
+
+    <!-- ── HEADER ── -->
+    <div class="hud-header">
+        <div class="header-left">
+            <span>STARK INDUSTRIES</span>
+            <span>SYSTEM v7.2.1</span>
+            <span id="date-display">--</span>
+        </div>
+        <div class="header-center">
+            <h1>J.A.R.V.I.S</h1>
+            <div class="subtitle">JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+        </div>
+        <div class="header-right">
+            <span>STATUS: ONLINE</span>
+            <span>NEURAL: ACTIVE</span>
+            <span id="clock">--:--:--</span>
+        </div>
+    </div>
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left-panel">
+
+        <!-- Arc Reactor -->
+        <div class="hud-box">
+            <div class="hud-box-label">CORE STATUS</div>
+            <div class="arc-reactor">
+                <div class="arc-ring arc-ring-1"></div>
+                <div class="arc-ring arc-ring-2"></div>
+                <div class="arc-ring arc-ring-3"></div>
+                <div class="arc-core" id="arc-core"></div>
+            </div>
+            <div id="status-text">STANDBY</div>
+        </div>
+
+        <!-- Waveform -->
+        <div class="hud-box">
+            <div class="hud-box-label">AUDIO INPUT</div>
+            <div class="waveform" id="waveform">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
+        </div>
+
+        <!-- System stats -->
+        <div class="hud-box">
+            <div class="hud-box-label">SYSTEM LOAD</div>
+            <div class="stat-row">
+                <span class="stat-label">CPU</span>
+                <div class="stat-bar-wrap"><div class="stat-bar" style="width:72%"></div></div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">MEM</span>
+                <div class="stat-bar-wrap"><div class="stat-bar" style="width:45%"></div></div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">NET</span>
+                <div class="stat-bar-wrap"><div class="stat-bar" style="width:88%"></div></div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">AI</span>
+                <div class="stat-bar-wrap"><div class="stat-bar" style="width:100%"></div></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── CENTER PANEL ── -->
+    <div class="center-panel">
+        <div id="chat-box">
+            <div class="msg jarvis-msg">Good day, Sir. All systems are online and fully operational. How may I assist you?</div>
+        </div>
+        <div class="input-area">
+            <span class="input-prefix">INPUT //</span>
+            <input type="text" id="user-input" placeholder="Enter command or speak..."/>
+            <button class="hud-btn" onclick="sendMessage()">SEND</button>
+            <button class="hud-btn" id="mic-btn" onclick="startVoice()">🎤 MIC</button>
+            <button class="hud-btn orange" onclick="clearChat()">CLR</button>
+        </div>
+    </div>
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right-panel">
+
+        <!-- Radar -->
+        <div class="hud-box">
+            <div class="hud-box-label">SENSOR ARRAY</div>
+            <div class="radar-wrap">
+                <div class="radar-circle" style="width:80px;height:80px;"></div>
+                <div class="radar-circle" style="width:55px;height:55px;"></div>
+                <div class="radar-circle" style="width:30px;height:30px;"></div>
+                <div class="radar-sweep"></div>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="hud-box" style="flex:1">
+            <div class="hud-box-label">EVENT LOG</div>
+            <div id="event-log" style="font-size:8px;color:var(--text-dim);line-height:1.8;"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // ── Clock ──────────────────────────────────────
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').textContent =
+            now.toTimeString().slice(0,8);
+        document.getElementById('date-display').textContent =
+            now.toDateString().toUpperCase();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── Event log ─────────────────────────────────
+    function logEvent(text) {
+        const log = document.getElementById('event-log');
+        const t = new Date().toTimeString().slice(0,5);
+        log.innerHTML = `<div>[${t}] ${text}</div>` + log.innerHTML;
+    }
+
+    // ── Set status ────────────────────────────────
+    function setStatus(text, cls) {
+        const s = document.getElementById('status-text');
+        s.textContent = text;
+        s.className = cls || '';
+    }
+
+    // ── Waveform ──────────────────────────────────
+    function setWave(active) {
+        const w = document.getElementById('waveform');
+        if (active) w.classList.add('active');
+        else w.classList.remove('active');
+    }
+
+    // ── Arc core ──────────────────────────────────
+    function setArc(active) {
+        const a = document.getElementById('arc-core');
+        if (active) a.classList.add('active');
+        else a.classList.remove('active');
+    }
+
+    // ── Add chat message ──────────────────────────
+    function addMessage(text, type) {
+        const box = document.getElementById('chat-box');
+        const div = document.createElement('div');
+        div.className = 'msg ' + (type === 'user' ? 'user-msg' : 'jarvis-msg');
+        div.textContent = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    // ── Speak ─────────────────────────────────────
+    function speak(text) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US';
+        u.rate = 0.95;
+        setStatus('SPEAKING', 'speaking');
+        setArc(true);
+        u.onend = () => {
+            setStatus('READY', '');
+            setArc(false);
+        };
+        window.speechSynthesis.speak(u);
+    }
+
+    // ── Send to Django ────────────────────────────
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const command = input.value.trim();
+        if (!command) return;
+        input.value = '';
+
+        addMessage(command, 'user');
+        logEvent('CMD: ' + command.substring(0, 20));
+        setStatus('PROCESSING', 'processing');
+        setWave(false);
+
+        try {
+            const res = await fetch('/ask/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command })
+            });
+            const data = await res.json();
+            addMessage(data.response, 'jarvis');
+            logEvent('RESP received');
+            speak(data.response);
+        } catch (e) {
+            addMessage('Sir, connection to server failed.', 'jarvis');
+            setStatus('ERROR', '');
+        }
+    }
+
+    // ── Voice input ───────────────────────────────
+    function startVoice() {
+        const btn = document.getElementById('mic-btn');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.start();
+
+        btn.textContent = '🔴 LISTENING';
+        btn.classList.add('mic-active');
+        setStatus('LISTENING', 'listening');
+        setWave(true);
+        logEvent('MIC activated');
+
+        recognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            document.getElementById('user-input').value = transcript;
+            btn.textContent = '🎤 MIC';
+            btn.classList.remove('mic-active');
+            setWave(false);
+            sendMessage();
+        };
+
+        recognition.onerror = () => {
+            btn.textContent = '🎤 MIC';
+            btn.classList.remove('mic-active');
+            setStatus('MIC ERROR', '');
+            setWave(false);
+        };
+
+        recognition.onend = () => {
+            btn.textContent = '🎤 MIC';
+            btn.classList.remove('mic-active');
+        };
+    }
+
+    // ── Quick commands ────────────────────────────
+    // ── Clear chat ────────────────────────────────
+    function clearChat() {
+        document.getElementById('chat-box').innerHTML =
+            '<div class="msg jarvis-msg">Chat cleared. Systems nominal, Sir.</div>';
+        logEvent('Chat cleared');
+    }
+
+    // ── Enter key ─────────────────────────────────
+    document.getElementById('user-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // ── Boot log ──────────────────────────────────
+    logEvent('JARVIS online');
+    logEvent('Neural net loaded');
+    logEvent('Groq API connected');
+</script>
+
+</body>
+</html>
