@@ -19,7 +19,7 @@ Jarvis is a Python-based AI voice assistant. It can perform various tasks using 
 
 - Python
 - SpeechRecognition
-- pyttsx3
+- Django
 - HTML/CSS
 - Wikipedia API
 - VS Code
